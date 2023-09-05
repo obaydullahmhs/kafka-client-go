@@ -7,12 +7,23 @@ import (
 )
 
 func main() {
-	brokerAddress := []string{"localhost:9092"}
+	HI()
+}
+func HI() {
+	brokerAddress := []string{"localhost:29095"}
+	//brokerAddress := []string{"kafka-quickstart-0.kafka-quickstart-pods.demo.svc.cluster.local:9092", "kafka-quickstart-1.kafka-quickstart-pods.demo.svc.cluster.local:9092",
+	//	"kafka-quickstart-2.kafka-quickstart-pods.demo.svc.cluster.local:9092"}
 	// create a broker client
 	broker := sarama.NewBroker(brokerAddress[0])
 	config := sarama.NewConfig()
 	err := broker.Open(config)
-	defer broker.Close()
+	defer func(broker *sarama.Broker) {
+		err := broker.Close()
+		if err != nil {
+			return
+		}
+	}(broker)
+
 	if err != nil {
 		fmt.Println("failed to open broker connection")
 		return
@@ -20,40 +31,61 @@ func main() {
 	fmt.Println(broker.Connected())
 	// create a cluster admin
 	admin, err := sarama.NewClusterAdmin(brokerAddress, config)
-	defer admin.Close()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer func(admin sarama.ClusterAdmin) {
+		err := admin.Close()
+		if err != nil {
+			return
+		}
+	}(admin)
 	if err != nil {
 		fmt.Println("Failed to create cluster admin:", err)
 		return
 	}
 
-	createTopic("my-topic", admin, 1, 1)
+	//createTopic("my-topic", admin, 1, 1)
 	//deleteTopic("my-topic", admin)
 	describeCluster(admin)
-	printTopics(admin)
-	config.Producer.Return.Successes = true
-	// Create a new producer
-	producer, err := sarama.NewSyncProducer([]string{"localhost:9092"}, config)
+	//printTopics(admin)
+	//config.Producer.Return.Successes = true
+	//// Create a new producer
+	//producer, err := sarama.NewSyncProducer(brokerAddress, config)
+	//if err != nil {
+	//	log.Fatalf("Failed to create producer: %s", err)
+	//}
+	//defer func() {
+	//	if err := producer.Close(); err != nil {
+	//		log.Printf("Failed to close producer: %s", err)
+	//	}
+	//}()
+	//sendMessage("my-topic", "Hi, KubeDB", producer)
+	//
+	//// Create a new consumer
+	//consumer, err := sarama.NewConsumer(brokerAddress, config)
+	//if err != nil {
+	//	log.Fatalf("Failed to create consumer: %s", err)
+	//}
+	//defer func() {
+	//	if err := consumer.Close(); err != nil {
+	//		log.Printf("Failed to close consumer: %s", err)
+	//	}
+	//}()
+	//consumeMessage("my-topic", 0, consumer)
+	client, err := sarama.NewClient(brokerAddress, config)
 	if err != nil {
-		log.Fatalf("Failed to create producer: %s", err)
+		fmt.Println("failed create client")
+		return
 	}
-	defer func() {
-		if err := producer.Close(); err != nil {
-			log.Printf("Failed to close producer: %s", err)
-		}
-	}()
-	sendMessage("my-topic", "Hi, KubeDB", producer)
+	SeeConfig(client)
 
-	// Create a new consumer
-	consumer, err := sarama.NewConsumer([]string{"localhost:9092"}, config)
-	if err != nil {
-		log.Fatalf("Failed to create consumer: %s", err)
-	}
-	defer func() {
-		if err := consumer.Close(); err != nil {
-			log.Printf("Failed to close consumer: %s", err)
-		}
-	}()
-	consumeMessage("my-topic", 0, consumer)
+}
+
+func SeeConfig(client sarama.Client) {
+	cn := client.Config()
+	fmt.Println(cn)
 }
 func consumeMessage(topic string, partition int32, consumer sarama.Consumer) {
 	// Set up a partition consumer for the topic
@@ -71,6 +103,7 @@ func consumeMessage(topic string, partition int32, consumer sarama.Consumer) {
 	for message := range partitionConsumer.Messages() {
 		fmt.Printf("Received message. Partition: %d, Offset: %d, Value: %s\n", message.Partition, message.Offset, string(message.Value))
 	}
+
 }
 
 func sendMessage(topic string, messageValue string, producer sarama.SyncProducer) {
@@ -140,4 +173,9 @@ func describeCluster(admin sarama.ClusterAdmin) {
 	}
 
 	fmt.Printf("Controller Broker ID: %d\n", controllerID)
+	dd, err := admin.DescribeLogDirs([]int32{0})
+	if err != nil {
+		return
+	}
+	fmt.Println(dd[0][0].Path)
 }

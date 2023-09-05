@@ -1,15 +1,16 @@
 package main
 
 import (
+	"C"
 	"context"
 	"fmt"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"time"
 )
 
 func main() {
 	// Specify the Kafka broker(s) address
-	broker := "localhost:9092"
+	broker := "127.0.0.1:9095"
 
 	// Create AdminClient configuration
 	adminConfig := &kafka.ConfigMap{"bootstrap.servers": broker}
@@ -24,15 +25,31 @@ func main() {
 	// Specify the topic name and configuration
 	//createTopic(admin, "my-topic")
 	//deleteTopic(admin, "my-topic")
-	printTopics()
-	produceMessage()
-	consumeMessage()
+	printTopics(broker)
+	//produceMessage()
+	//	consumeMessage()
 	// Close AdminClient
+	err = Ping(admin)
+	if err != nil {
+		return
+	}
 	admin.Close()
 }
-func consumeMessage() {
-	broker := "localhost:9092"
+func Ping(admin *kafka.AdminClient) error {
+	topic := "sample"
+	meta, err := admin.GetMetadata(&topic, false, 1000)
+	if err != nil {
+		return err
+	}
+	fmt.Println(meta)
+	return nil
+}
+func consumeMessage(topics ...string) {
+	broker := "127.0.0.1:9092"
 	topic := "my-topic"
+	if len(topics) > 0 && topics[0] == "" {
+		topic = topics[0]
+	}
 
 	// Consumer configuration
 	c, err := kafka.NewConsumer(&kafka.ConfigMap{
@@ -63,7 +80,7 @@ func consumeMessage() {
 
 func produceMessage() {
 	// Kafka broker configuration
-	broker := "localhost:9092"
+	broker := "127.0.0.1:9092"
 	topic := "my-topic"
 
 	// Producer configuration
@@ -129,8 +146,8 @@ func createTopic(admin *kafka.AdminClient, topic string) {
 	}
 }
 
-func printTopics() {
-	brokers := "localhost:9092"    // Replace with your Kafka broker addresses
+func printTopics(brokers string) error {
+	//brokers := "127.0.0.1:9092"    // Replace with your Kafka broker addresses
 	groupID := "my-consumer-group" // Replace with your consumer group ID
 
 	config := &kafka.ConfigMap{
@@ -142,17 +159,23 @@ func printTopics() {
 	if err != nil {
 		panic(err)
 	}
-	defer consumer.Close()
+	defer func(consumer *kafka.Consumer) {
+		err := consumer.Close()
+		if err != nil {
+			return
+		}
+	}(consumer)
 
 	topics, err := consumer.GetMetadata(nil, true, 1000)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	fmt.Println("Kafka topics:")
 	for _, topic := range topics.Topics {
 		fmt.Println(topic.Topic)
 	}
+	return nil
 }
 
 func deleteTopic(admin *kafka.AdminClient, topic string) {
