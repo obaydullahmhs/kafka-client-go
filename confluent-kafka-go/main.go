@@ -10,13 +10,17 @@ import (
 
 func main() {
 	// Specify the Kafka broker(s) address
-	broker := "127.0.0.1:9095"
+	//broker := "127.0.0.1:9092"
+	//broker := []string{"kafka-quickstart-0.kafka-quickstart-pods.demo.svc.cluster.local:9092", "kafka-quickstart-1.kafka-quickstart-pods.demo.svc.cluster.local:9092",
+	//	"kafka-quickstart-2.kafka-quickstart-pods.demo.svc.cluster.local:9092"}
+	broker := "kafka-quickstart-0.kafka-quickstart-pods.demo.svc.cluster.local:9092"
 
 	// Create AdminClient configuration
 	adminConfig := &kafka.ConfigMap{"bootstrap.servers": broker}
 
 	// Create AdminClient instance
 	admin, err := kafka.NewAdminClient(adminConfig)
+	//admin.GetMetadata()
 	if err != nil {
 		fmt.Printf("Failed to create AdminClient: %v\n", err)
 		return
