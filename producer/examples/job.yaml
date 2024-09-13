@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kafka-producer
+  namespace: demo
+spec:
+  template:
+    spec:
+      containers:
+        - name: producer
+          image: obaydullahmhs/kafka-producer:dev
+          imagePullPolicy: Always
+          env:
+            - name: KAFKA_BROKERS
+              value: kafka-dev-0.kafka-dev-pods.demo.svc.cluster.local:9092,kafka-dev-1.kafka-dev-pods.demo.svc.cluster.local:9092
+            - name: KAFKA_TOPIC
+              value: demo-topic
+            - name: KAFKA_MAX_MESSAGES
+              value: "-1"
+            - name: KAFKA_SLEEP_TIME_MS
+              value: "1000"
+            - name: KAFKA_INSECURE_TLS
+              value: "true"
+#            - name: KAFKA_USERNAME
+#              value: admin
+#            - name: KAFKA_PASSWORD
+#              value: admin
+#            - name: KAFKA_CA_LOCATION
+#              value: /etc/ssl/certs/ca.crt
+#            - name: KAFKA_CERT_LOCATION
+#              value: /etc/ssl/certs/tls.crt
+#            - name: KAFKA_KEY_LOCATION
+#              value: /etc/ssl/certs/tls.key
+#            - name: KAFKA_SECURITY_PROTOCOL
+#              value: SASL_SSL
+#            - name: KAFKA_SASL_MECHANISM
+#              value: PLAIN
+#          volumeMounts:
+#            - name: kafka-certs
+#              mountPath: /etc/ssl/certs
+#      volumes:
+#        - name: kafka-certs
+#          secret:
+#            secretName: kafka-dev-client-certs
+      restartPolicy: Never
+  backoffLimit: 4

@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kafka-consumer
+  namespace: demo
+spec:
+    template:
+      spec:
+        containers:
+          - name: consumer
+            image: obaydullahmhs/kafka-consumer:dev
+            imagePullPolicy: Always
+            env:
+              - name: KAFKA_BROKERS
+                value: kafka-dev-0.kafka-dev-pods.demo.svc.cluster.local:9092,kafka-dev-1.kafka-dev-pods.demo.svc.cluster.local:9092
+              - name: KAFKA_TOPIC
+                value: demo-topic
+              - name: KAFKA_CONSUMER_GROUP
+                value: demo-group
+        restartPolicy: Never
+    backoffLimit: 4
