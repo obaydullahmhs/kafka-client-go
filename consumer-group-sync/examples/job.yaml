@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kafka-consumer-group-sync
+  namespace: demo
+spec:
+  template:
+    spec:
+      containers:
+        - name: consumer-group-sync
+          image: obaydullahmhs/kafka-consumer-group-sync:dev
+          imagePullPolicy: Always
+          env:
+            - name: SOURCE_KAFKA_BROKERS
+              value: kafka-dev-0.kafka-dev-pods.demo.svc.cluster.local:9092,kafka-dev-1.kafka-dev-pods.demo.svc.cluster.local:9092
+            - name: TARGET_KAFKA_BROKERS
+              value: kafka-prod-broker-0.kafka-prod-pods.demo.svc.cluster.local:9092,kafka-prod-broker-1.kafka-prod-pods.demo.svc.cluster.local:9092
+      restartPolicy: Never
+  backoffLimit: 4
